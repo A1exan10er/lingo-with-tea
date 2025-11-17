@@ -11,8 +11,14 @@ export class GeminiService {
   private model: any;
   private currentModelType: GeminiModelType;
   private static instance: GeminiService;
-  private readonly maxRetries = 3;
-  private readonly retryDelay = 1000; // 1 second
+  private readonly maxRetries = 5;
+  private readonly retryDelay = 2000; // 2 seconds
+  private readonly fallbackModels: GeminiModelType[] = [
+    'gemini-2.5-flash',
+    'gemini-2.5-flash-lite',
+    'gemini-2.0-flash',
+    'gemini-2.0-flash-lite'
+  ];
 
   private constructor(apiKey: string, modelType: GeminiModelType = 'gemini-2.5-flash') {
     this.genAI = new GoogleGenerativeAI(apiKey);
@@ -33,18 +39,37 @@ export class GeminiService {
   }
 
   /**
-   * Retry helper for API calls
+   * Retry helper for API calls with automatic fallback to different models
    */
   private async retryWithBackoff<T>(
-    fn: () => Promise<T>,
-    retries = this.maxRetries
+    fn: (model: any) => Promise<T>,
+    retries = this.maxRetries,
+    modelIndex = 0
   ): Promise<T> {
     try {
-      return await fn();
+      // Use current model or fallback model
+      const modelToUse = modelIndex === 0 
+        ? this.model 
+        : this.genAI.getGenerativeModel({ model: this.fallbackModels[modelIndex - 1] });
+      
+      return await fn(modelToUse);
     } catch (error: any) {
-      if (retries > 0 && (error?.status === 429 || error?.status === 503)) {
-        await new Promise(resolve => setTimeout(resolve, this.retryDelay));
-        return this.retryWithBackoff(fn, retries - 1);
+      const isOverloaded = error?.status === 503 || error?.message?.includes('overloaded');
+      const isRateLimit = error?.status === 429;
+      
+      if (retries > 0 && (isOverloaded || isRateLimit)) {
+        console.log(`Retry attempt ${this.maxRetries - retries + 1}/${this.maxRetries}. Error: ${error?.message}`);
+        
+        // Wait with exponential backoff
+        const delay = this.retryDelay * Math.pow(1.5, this.maxRetries - retries);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        
+        // Try fallback model if available
+        const nextModelIndex = isOverloaded && modelIndex < this.fallbackModels.length 
+          ? modelIndex + 1 
+          : modelIndex;
+        
+        return this.retryWithBackoff(fn, retries - 1, nextModelIndex);
       }
       throw error;
     }
@@ -257,56 +282,51 @@ export class GeminiService {
     topic: string,
     contentType: 'vocabulary' | 'sentences' | 'grammar'
   ): Promise<any> {
-    return this.retryWithBackoff(async () => {
-      try {
-        let prompt = '';
+    return this.retryWithBackoff(async (model) => {
+      let prompt = '';
+      
+      if (contentType === 'vocabulary') {
+        prompt = `Generate 8 ${level} level vocabulary words in ${learningLanguage.name} related to "${topic}". 
+        For each word provide:
+        - The word in ${learningLanguage.name}
+        - Translation in ${teachingLanguage.name}
+        - A simple example sentence
         
-        if (contentType === 'vocabulary') {
-          prompt = `Generate 8 ${level} level vocabulary words in ${learningLanguage.name} related to "${topic}". 
-          For each word provide:
-          - The word in ${learningLanguage.name}
-          - Translation in ${teachingLanguage.name}
-          - A simple example sentence
-          
-          Return ONLY a valid JSON array with no markdown formatting or code blocks: [{"word": "...", "translation": "...", "example": "..."}]`;
-        } else if (contentType === 'sentences') {
-          prompt = `Generate 5 common ${level} level sentences in ${learningLanguage.name} about "${topic}".
-          For each sentence provide:
-          - The sentence in ${learningLanguage.name}
-          - Translation in ${teachingLanguage.name}
-          - Grammar explanation in ${teachingLanguage.name}
-          - Key vocabulary words used
-          
-          Return ONLY a valid JSON array with no markdown formatting or code blocks: [{"sentence": "...", "translation": "...", "grammar": "...", "vocabulary": ["..."]}]`;
-        } else {
-          prompt = `Explain a key ${level} level grammar concept in ${learningLanguage.name} related to "${topic}".
-          Provide:
-          - Grammar rule title
-          - Clear explanation in ${teachingLanguage.name}
-          - 3 example sentences
-          - Common mistakes to avoid
-          
-          Return ONLY a valid JSON object with no markdown formatting or code blocks: {"title": "...", "explanation": "...", "examples": [...], "mistakes": [...]}`;
-        }
-
-        const result = await this.model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text().trim();
+        Return ONLY a valid JSON array with no markdown formatting or code blocks: [{"word": "...", "translation": "...", "example": "..."}]`;
+      } else if (contentType === 'sentences') {
+        prompt = `Generate 5 common ${level} level sentences in ${learningLanguage.name} about "${topic}".
+        For each sentence provide:
+        - The sentence in ${learningLanguage.name}
+        - Translation in ${teachingLanguage.name}
+        - Grammar explanation in ${teachingLanguage.name}
+        - Key vocabulary words used
         
-        // Remove markdown code blocks if present
-        let cleanText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        Return ONLY a valid JSON array with no markdown formatting or code blocks: [{"sentence": "...", "translation": "...", "grammar": "...", "vocabulary": ["..."]}]`;
+      } else {
+        prompt = `Explain a key ${level} level grammar concept in ${learningLanguage.name} related to "${topic}".
+        Provide:
+        - Grammar rule title
+        - Clear explanation in ${teachingLanguage.name}
+        - 3 example sentences
+        - Common mistakes to avoid
         
-        // Try to extract JSON from response
-        const jsonMatch = cleanText.match(/\[.*\]|\{.*\}/s);
-        if (jsonMatch) {
-          return JSON.parse(jsonMatch[0]);
-        }
-        
-        throw new Error('No valid JSON found in response');
-      } catch (error: any) {
-        console.error('Content generation error:', error);
-        throw new Error(`Failed to generate learning content: ${error.message || 'Unknown error'}`);
+        Return ONLY a valid JSON object with no markdown formatting or code blocks: {"title": "...", "explanation": "...", "examples": [...], "mistakes": [...]}`;
       }
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text().trim();
+      
+      // Remove markdown code blocks if present
+      let cleanText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      
+      // Try to extract JSON from response
+      const jsonMatch = cleanText.match(/\[.*\]|\{.*\}/s);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]);
+      }
+      
+      throw new Error('No valid JSON found in response');
     });
   }
 
