@@ -41,20 +41,25 @@ Lingo-with-Tea/
 
 #### ✅ Multi-Language Support
 - **Supported Languages**: English, German, Chinese (easily extendable)
-- **Native Language**: User's mother tongue
-- **Teaching Language**: Interface and explanation language (can differ from native)
+- **Teaching Language**: Interface and explanation language
 - **Learning Language**: Target language to study
+- **No Native Language**: Removed to simplify the learning experience
 
-#### ✅ Vocabulary Module
-- Pre-built vocabulary lessons
-- Organized by difficulty (Beginner, Intermediate, Advanced)
-- Categorized by topic
-- Phonetic pronunciations
-- Add words to personal word book
+#### ✅ AI Learning Module
+- **Dynamic Content Generation**: AI creates personalized lessons based on:
+  - User level (beginner, intermediate, advanced)
+  - Custom topics (food, travel, business, etc.)
+  - Content type (vocabulary, sentences, grammar)
+- **Learn Tab**: Generate vocabulary, sentences, or grammar explanations
+- **Practice Tab**: Interactive exercises with instant feedback
+  - Translation exercises
+  - Fill-in-the-blank
+  - Multiple choice questions
+  - Intelligent mistake analysis with grammar and vocabulary tips
 
 #### ✅ Word Book Module
 - Add custom words
-- AI-generated translations (via Gemini)
+- AI-generated translations (via Gemini 2.5)
 - AI-generated explanations
 - AI-generated example sentences
 - Search functionality
@@ -62,13 +67,20 @@ Lingo-with-Tea/
 - Review tracking
 - Progress statistics
 
-#### ✅ AI Integration (Google Gemini)
-- Word translation
-- Detailed explanations
-- Example sentence generation
-- Pronunciation guides
-- Vocabulary lesson generation
-- AI tutor chat (ready to implement)
+#### ✅ AI Integration (Google Gemini 2.5)
+- **5 Model Options**: Switch between models based on needs
+  - Gemini 2.5 Flash (Default - balanced)
+  - Gemini 2.5 Pro (Most capable)
+  - Gemini 2.5 Flash Lite (Fastest)
+  - Gemini 2.0 Flash
+  - Gemini 2.0 Flash Lite
+- **Advanced Features**:
+  - Dynamic content generation
+  - Sentence translation with analysis
+  - Mistake analysis with grammar feedback
+  - Practice exercise generation
+  - Automatic retry with exponential backoff (up to 5 attempts)
+  - Smart model fallback when overloaded
 
 #### ✅ Object-Oriented Design
 All core functionality uses proper OOP:
@@ -86,9 +98,9 @@ npm install
 ```
 
 ### 2. Get Your Gemini API Key
-1. Visit: https://makersuite.google.com/app/apikey
+1. Visit: https://aistudio.google.com/app/apikey
 2. Sign in with Google account
-3. Click "Create API Key"
+3. Click "Get API Key" or "Create API Key"
 4. Copy the key
 
 ### 3. Configure Environment
@@ -109,7 +121,9 @@ Your app will open at http://localhost:3000
 
 ### 5. Test the Features
 - Change language settings
-- Browse vocabulary lessons
+- Select AI model (try different models!)
+- Generate vocabulary on any topic
+- Practice with interactive exercises
 - Add words to your word book
 - Search and filter words
 - Mark words as reviewed
@@ -177,7 +191,11 @@ npm run deploy     # Deploy to GitHub Pages
 - `VocabularyManager` - Lesson organizer
 
 ### Services
-- `GeminiService` - Singleton for AI API (translation, explanation, examples)
+- `GeminiService` - Singleton for AI API with:
+  - Support for 5 Gemini models
+  - Automatic retry with exponential backoff
+  - Smart model fallback on overload
+  - Content generation, translation, mistake analysis
 
 ## 🎨 Customization
 
@@ -188,7 +206,7 @@ static readonly SPANISH = new Language('es', 'Spanish', 'Español');
 ```
 
 ### Add More Lessons
-Edit `src/models/Vocabulary.ts` → `initializeDefaultLessons()`
+AI generates lessons dynamically! Just enter any topic and level.
 
 ### Change Theme
 Edit `src/App.css` → Update gradient colors
@@ -199,7 +217,9 @@ Edit `src/App.css` → Update gradient colors
 - LocalStorage persistence (no backend needed)
 - Type-safe development with TypeScript
 - Modular component architecture
-- Lazy evaluation where possible
+- Automatic retry with exponential backoff (2s → 10s)
+- Smart model fallback for reliability
+- JSON parsing with markdown cleanup
 
 ## 🔒 Security
 
@@ -217,11 +237,11 @@ Edit `src/App.css` → Update gradient colors
 
 ## 🎓 Learning Path for Users
 
-1. **Setup** → Choose native, teaching, and learning languages
-2. **Explore** → Browse vocabulary lessons
-3. **Practice** → Add words to personal book
-4. **Review** → Mark words as reviewed, track progress
-5. **Expand** → Continue adding words and lessons
+1. **Setup** → Choose teaching and learning languages, select AI model
+2. **Learn** → Generate personalized content by level and topic
+3. **Practice** → Complete interactive exercises with instant feedback
+4. **Word Book** → Add and review personal vocabulary
+5. **Progress** → Track reviewed words and expand vocabulary
 
 ## 💡 Future Enhancement Ideas
 
@@ -248,6 +268,8 @@ npm install
 - Check `.env` file exists and has correct key
 - Verify key is active on Google AI Studio
 - Check browser console for errors
+- If you see "model is overloaded", the system automatically retries (up to 5 times) and tries fallback models
+- Try manually switching to a different AI model in the settings
 
 **TypeScript errors?**
 - These are expected until you run `npm install`

@@ -9,7 +9,7 @@ npm install
 
 ### Step 2: Set Up Your API Key
 
-1. Get a free Gemini API key from: https://makersuite.google.com/app/apikey
+1. Get a free Gemini API key from: https://aistudio.google.com/app/apikey
 2. Copy `.env.example` to `.env`:
    ```powershell
    Copy-Item .env.example .env
@@ -29,15 +29,20 @@ The app will open at http://localhost:3000
 ## 📱 Using the App
 
 1. **Set Your Languages**
-   - Native Language: Your mother tongue (e.g., Chinese)
    - Teaching Language: What language you want explanations in
    - Learning Language: The language you're studying (e.g., English, German)
+   - AI Model: Choose from 5 Gemini models (2.5 Flash default)
 
-2. **Explore Vocabulary**
-   - Click "📚 Vocabulary Lessons"
-   - Browse pre-made lessons
-   - Click on any lesson to see words
-   - Add words to your personal word book
+2. **AI Learning Module**
+   - **Learn Tab**: Generate personalized content
+     - Select level (beginner, intermediate, advanced)
+     - Enter a topic (e.g., "food", "travel", "business")
+     - Choose content type (vocabulary, sentences, grammar)
+     - Click "Generate Content"
+   - **Practice Tab**: Test your knowledge
+     - Complete translation exercises
+     - Fill in the blanks
+     - Get instant feedback with mistake analysis
 
 3. **Build Your Word Book**
    - Click "📖 My Word Book"
@@ -51,10 +56,10 @@ The app will open at http://localhost:3000
 
 ## 🌐 Deploy to GitHub Pages
 
-### First Time Setup
+### Automated Deployment (Recommended)
 
-1. Create a new repository on GitHub
-2. Initialize git in your project:
+1. **Create a new repository on GitHub**
+2. **Push your code**:
    ```powershell
    git init
    git add .
@@ -64,23 +69,26 @@ The app will open at http://localhost:3000
    git push -u origin main
    ```
 
-3. Go to your repository settings on GitHub:
-   - Navigate to Settings → Secrets and variables → Actions
+3. **Add API Key Secret**:
+   - Go to your repository → Settings → Secrets and variables → Actions
    - Click "New repository secret"
    - Name: `REACT_APP_GEMINI_API_KEY`
    - Value: Your Gemini API key
    - Click "Add secret"
 
-4. Deploy:
-   ```powershell
-   npm run deploy
-   ```
+4. **Enable GitHub Pages**:
+   - Go to Settings → Pages
+   - Under "Source", select **GitHub Actions**
+   - Save
+
+5. **Trigger Deployment**:
+   - Any push to `main` branch automatically deploys
+   - Or go to Actions tab and manually run the workflow
 
 Your site will be live at: `https://yourusername.github.io/lingo-with-tea/`
 
-### Subsequent Deployments
+### Manual Deployment
 
-Just run:
 ```powershell
 npm run deploy
 ```
@@ -112,7 +120,7 @@ static getAllLanguages(): Language[] {
 
 ### Add More Vocabulary Lessons
 
-Edit `src/models/Vocabulary.ts` in the `initializeDefaultLessons()` method to add your own custom lessons.
+Vocabulary is now AI-generated based on your preferences! Just enter any topic and the AI will create relevant content.
 
 ### Change Theme Colors
 
@@ -130,6 +138,8 @@ Run: `npm install`
 - Check your `.env` file has the correct API key
 - Ensure the key is active on Google AI Studio
 - Check your internet connection
+- If you get "model is overloaded", wait a moment and try again (automatic retry is built-in)
+- Try switching to a different AI model in the settings
 
 ### Build Errors
 - Delete `node_modules` and `package-lock.json`

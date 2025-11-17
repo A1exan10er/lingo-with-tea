@@ -1,33 +1,43 @@
 # ☕ Lingo with Tea
 
-A modern, AI-powered language learning platform built with React and TypeScript. Learn English, German, and more with the help of Google's Gemini AI.
+A modern, AI-powered language learning platform built with React and TypeScript. Learn English, German, and more with the help of Google's Gemini 2.5 AI models.
 
 ## 🌟 Features
 
-- **Multi-Language Support**: Learn English, German, or other languages with Chinese as your native language (easily extendable)
-- **Flexible Teaching Language**: Choose which language you want the interface and explanations in
-- **AI-Powered Learning**: Leverage Google Gemini AI for:
-  - Word translations
-  - Detailed explanations
-  - Example sentences
-  - Pronunciation guides
-- **Vocabulary Module**: Pre-built lessons organized by difficulty and category
+- **Multi-Language Support**: Learn English, German, or other languages with flexible teaching language options
+- **AI-Powered Learning**: Leverage Google Gemini 2.5 AI for:
+  - Dynamic vocabulary generation based on your level and topics
+  - Sentence practice with translations and grammar explanations
+  - Grammar lessons tailored to your learning level
+  - Intelligent mistake analysis with grammar and vocabulary feedback
+  - Interactive practice exercises (translation, fill-in-blank, multiple choice)
+- **Multiple AI Models**: Switch between 5 Gemini models:
+  - Gemini 2.5 Flash (Default - balanced speed & capability)
+  - Gemini 2.5 Pro (Most capable for complex tasks)
+  - Gemini 2.5 Flash Lite (Fastest responses)
+  - Gemini 2.0 Flash
+  - Gemini 2.0 Flash Lite
+- **Smart Error Handling**: Automatic retry with exponential backoff and model fallback for reliability
 - **Personal Word Book**: Save and manage your own vocabulary with AI-generated content
 - **Object-Oriented Design**: Clean, maintainable TypeScript code with proper OOP principles
 - **Persistent Storage**: Your progress and word book are saved locally
 
 ## 🚀 Getting Started
 
+### Live Demo
+
+Visit the live application at: **https://a1exan10er.github.io/lingo-with-tea/**
+
 ### Prerequisites
 
 - Node.js 18+ installed
-- A Google Gemini API key ([Get one here](https://makersuite.google.com/app/apikey))
+- A Google Gemini API key ([Get one here](https://aistudio.google.com/app/apikey))
 
-### Installation
+### Local Development
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/lingo-with-tea.git
+git clone https://github.com/A1exan10er/lingo-with-tea.git
 cd lingo-with-tea
 ```
 
@@ -64,6 +74,9 @@ lingo-with-tea/
 │   │   ├── LanguageSelector/
 │   │   │   ├── LanguageSelector.tsx
 │   │   │   └── LanguageSelector.css
+│   │   ├── LearningModule/
+│   │   │   ├── LearningModule.tsx
+│   │   │   └── LearningModule.css
 │   │   ├── VocabularyModule/
 │   │   │   ├── VocabularyModule.tsx
 │   │   │   └── VocabularyModule.css
@@ -123,20 +136,28 @@ Manages a user's personal collection of words with search, filter, and review ca
 Organizes vocabulary items by topic, difficulty, and category.
 
 #### `GeminiService`
-Handles all AI interactions including translation, explanation, and content generation.
+Handles all AI interactions with advanced error handling:
+- Support for 5 Gemini models (2.5 Pro, 2.5 Flash, 2.5 Flash Lite, 2.0 Flash, 2.0 Flash Lite)
+- Automatic retry with exponential backoff (up to 5 attempts)
+- Smart model fallback when a model is overloaded
+- Translation, explanation, content generation, and mistake analysis
 
 ## 🎯 Usage
 
 ### Language Settings
-1. Select your native language (e.g., Chinese)
-2. Choose the teaching language (what language you want explanations in)
-3. Pick the language you want to learn (e.g., English, German)
+1. Choose the teaching language (what language you want explanations in)
+2. Pick the language you want to learn (e.g., English, German)
+3. Select your preferred AI model (Gemini 2.5 Flash by default)
 
-### Vocabulary Module
-- Browse pre-built vocabulary lessons
-- Filter by difficulty level (beginner, intermediate, advanced)
-- Add words to your personal word book
-- View phonetic pronunciations and translations
+### AI Learning Module
+- **Learn Tab**: Generate personalized content by level and topic
+  - Vocabulary: Get 8 relevant words with translations and examples
+  - Sentences: Learn 5 common sentences with grammar explanations
+  - Grammar: Understand key grammar concepts with examples
+- **Practice Tab**: Test your knowledge with interactive exercises
+  - Translation exercises with detailed feedback
+  - Fill-in-the-blank with multiple choice options
+  - Instant mistake analysis with grammar and vocabulary tips
 
 ### Word Book Module
 - Add new words - AI automatically generates translations and explanations
@@ -146,40 +167,32 @@ Handles all AI interactions including translation, explanation, and content gene
 
 ## 🌐 Deployment
 
-### GitHub Pages
+### GitHub Pages (Automated)
 
-1. Update `package.json` with your repository:
-```json
-{
-  "homepage": "https://yourusername.github.io/lingo-with-tea"
-}
-```
+This project uses GitHub Actions for automatic deployment:
 
-2. Install gh-pages:
+1. **Add your API key as a GitHub Secret**:
+   - Go to your repository → Settings → Secrets and variables → Actions
+   - Create a new secret: `REACT_APP_GEMINI_API_KEY`
+   - Paste your Gemini API key as the value
+
+2. **Enable GitHub Pages**:
+   - Go to Settings → Pages
+   - Set Source to "GitHub Actions"
+
+3. **Deploy**:
+   - Push to the `main` branch
+   - GitHub Actions automatically builds and deploys
+   - Visit: `https://yourusername.github.io/lingo-with-tea/`
+
+### Manual Deployment
+
 ```bash
-npm install --save-dev gh-pages
-```
-
-3. Add deployment scripts to `package.json`:
-```json
-{
-  "scripts": {
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d build"
-  }
-}
-```
-
-4. Deploy:
-```bash
+npm run build
 npm run deploy
 ```
 
-### Vercel/Netlify
-
-Simply connect your GitHub repository and these platforms will auto-deploy on push.
-
-**Important**: Remember to add your `REACT_APP_GEMINI_API_KEY` to the environment variables in your deployment platform.
+**Important**: Always add `REACT_APP_GEMINI_API_KEY` to your deployment platform's environment variables.
 
 ## 🔧 Configuration
 
