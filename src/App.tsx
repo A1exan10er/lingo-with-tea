@@ -9,7 +9,7 @@ function App() {
   const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState<'learning' | 'wordbook'>('learning');
   const [currentLearningLanguage, setCurrentLearningLanguage] = useState<Language>(Language.ENGLISH);
-  const [currentModel, setCurrentModel] = useState<GeminiModelType>('gemini-2.5-flash');
+  const [currentModel, setCurrentModel] = useState<GeminiModelType>('gemini-1.5-pro');
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
@@ -99,8 +99,8 @@ function App() {
                 onChange={handleModelChange}
                 className="model-select"
               >
-                <option value="gemini-2.5-flash">Gemini 2.5 Flash (Faster)</option>
-                <option value="gemini-2.5-pro">Gemini 2.5 Pro (More Capable)</option>
+                <option value="gemini-1.5-pro">Gemini 1.5 Pro (Recommended)</option>
+                <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash (Experimental)</option>
               </select>
             </div>
           </div>

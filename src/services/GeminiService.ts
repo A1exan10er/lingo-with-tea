@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Language } from '../models/Language';
 
-export type GeminiModelType = 'gemini-2.5-flash' | 'gemini-2.5-pro';
+export type GeminiModelType = 'gemini-2.0-flash-exp' | 'gemini-1.5-pro';
 
 /**
  * Service for interacting with Google's Gemini API
@@ -11,8 +11,10 @@ export class GeminiService {
   private model: any;
   private currentModelType: GeminiModelType;
   private static instance: GeminiService;
+  private readonly maxRetries = 3;
+  private readonly retryDelay = 1000; // 1 second
 
-  private constructor(apiKey: string, modelType: GeminiModelType = 'gemini-2.5-flash') {
+  private constructor(apiKey: string, modelType: GeminiModelType = 'gemini-1.5-pro') {
     this.genAI = new GoogleGenerativeAI(apiKey);
     this.currentModelType = modelType;
     this.model = this.genAI.getGenerativeModel({ model: modelType });
@@ -28,6 +30,24 @@ export class GeminiService {
       GeminiService.instance = new GeminiService(key);
     }
     return GeminiService.instance;
+  }
+
+  /**
+   * Retry helper for API calls
+   */
+  private async retryWithBackoff<T>(
+    fn: () => Promise<T>,
+    retries = this.maxRetries
+  ): Promise<T> {
+    try {
+      return await fn();
+    } catch (error: any) {
+      if (retries > 0 && (error?.status === 429 || error?.status === 503)) {
+        await new Promise(resolve => setTimeout(resolve, this.retryDelay));
+        return this.retryWithBackoff(fn, retries - 1);
+      }
+      throw error;
+    }
   }
 
   /**
@@ -237,52 +257,57 @@ export class GeminiService {
     topic: string,
     contentType: 'vocabulary' | 'sentences' | 'grammar'
   ): Promise<any> {
-    try {
-      let prompt = '';
-      
-      if (contentType === 'vocabulary') {
-        prompt = `Generate 8 ${level} level vocabulary words in ${learningLanguage.name} related to "${topic}". 
-        For each word provide:
-        - The word in ${learningLanguage.name}
-        - Translation in ${teachingLanguage.name}
-        - A simple example sentence
+    return this.retryWithBackoff(async () => {
+      try {
+        let prompt = '';
         
-        Format as JSON array: [{"word": "...", "translation": "...", "example": "..."}]`;
-      } else if (contentType === 'sentences') {
-        prompt = `Generate 5 common ${level} level sentences in ${learningLanguage.name} about "${topic}".
-        For each sentence provide:
-        - The sentence in ${learningLanguage.name}
-        - Translation in ${teachingLanguage.name}
-        - Grammar explanation in ${teachingLanguage.name}
-        - Key vocabulary words used
-        
-        Format as JSON array: [{"sentence": "...", "translation": "...", "grammar": "...", "vocabulary": ["..."]}]`;
-      } else {
-        prompt = `Explain a key ${level} level grammar concept in ${learningLanguage.name} related to "${topic}".
-        Provide:
-        - Grammar rule title
-        - Clear explanation in ${teachingLanguage.name}
-        - 3 example sentences
-        - Common mistakes to avoid
-        
-        Format as JSON: {"title": "...", "explanation": "...", "examples": [...], "mistakes": [...]}`;
-      }
+        if (contentType === 'vocabulary') {
+          prompt = `Generate 8 ${level} level vocabulary words in ${learningLanguage.name} related to "${topic}". 
+          For each word provide:
+          - The word in ${learningLanguage.name}
+          - Translation in ${teachingLanguage.name}
+          - A simple example sentence
+          
+          Return ONLY a valid JSON array with no markdown formatting or code blocks: [{"word": "...", "translation": "...", "example": "..."}]`;
+        } else if (contentType === 'sentences') {
+          prompt = `Generate 5 common ${level} level sentences in ${learningLanguage.name} about "${topic}".
+          For each sentence provide:
+          - The sentence in ${learningLanguage.name}
+          - Translation in ${teachingLanguage.name}
+          - Grammar explanation in ${teachingLanguage.name}
+          - Key vocabulary words used
+          
+          Return ONLY a valid JSON array with no markdown formatting or code blocks: [{"sentence": "...", "translation": "...", "grammar": "...", "vocabulary": ["..."]}]`;
+        } else {
+          prompt = `Explain a key ${level} level grammar concept in ${learningLanguage.name} related to "${topic}".
+          Provide:
+          - Grammar rule title
+          - Clear explanation in ${teachingLanguage.name}
+          - 3 example sentences
+          - Common mistakes to avoid
+          
+          Return ONLY a valid JSON object with no markdown formatting or code blocks: {"title": "...", "explanation": "...", "examples": [...], "mistakes": [...]}`;
+        }
 
-      const result = await this.model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text().trim();
-      
-      // Try to extract JSON from response
-      const jsonMatch = text.match(/\[.*\]|\{.*\}/s);
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
+        const result = await this.model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text().trim();
+        
+        // Remove markdown code blocks if present
+        let cleanText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        
+        // Try to extract JSON from response
+        const jsonMatch = cleanText.match(/\[.*\]|\{.*\}/s);
+        if (jsonMatch) {
+          return JSON.parse(jsonMatch[0]);
+        }
+        
+        throw new Error('No valid JSON found in response');
+      } catch (error: any) {
+        console.error('Content generation error:', error);
+        throw new Error(`Failed to generate learning content: ${error.message || 'Unknown error'}`);
       }
-      
-      return text;
-    } catch (error) {
-      console.error('Content generation error:', error);
-      throw new Error('Failed to generate learning content');
-    }
+    });
   }
 
   /**
