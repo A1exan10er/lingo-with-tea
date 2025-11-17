@@ -1,0 +1,289 @@
+.wordbook-module {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.wordbook-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.wordbook-header h2 {
+  color: #1f2937;
+  font-size: 2rem;
+  margin: 0;
+}
+
+.wordbook-stats {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.wordbook-stats span {
+  background-color: #eef2ff;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  color: #4338ca;
+  font-weight: 600;
+}
+
+.wordbook-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.add-word-section {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.add-word-section input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.add-word-section input:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+
+.add-word-section button {
+  padding: 0.75rem 1.5rem;
+  background-color: #6366f1;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.add-word-section button:hover:not(:disabled) {
+  background-color: #4f46e5;
+}
+
+.add-word-section button:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.search-filter-section {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.search-filter-section input {
+  flex: 2;
+  padding: 0.75rem 1rem;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.search-filter-section select {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  background-color: white;
+  cursor: pointer;
+}
+
+.wordbook-content {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 2rem;
+}
+
+.words-list {
+  background-color: #f9fafb;
+  padding: 1.5rem;
+  border-radius: 12px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.no-words {
+  text-align: center;
+  color: #6b7280;
+  padding: 2rem;
+}
+
+.word-card {
+  background-color: white;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.3s;
+}
+
+.word-card:hover {
+  border-color: #6366f1;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.word-card.active {
+  border-color: #6366f1;
+  background-color: #eef2ff;
+}
+
+.word-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.word-card-header h4 {
+  margin: 0;
+  color: #1f2937;
+  font-size: 1.1rem;
+}
+
+.delete-btn {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s;
+}
+
+.delete-btn:hover {
+  background-color: #dc2626;
+}
+
+.word-translation {
+  color: #4b5563;
+  margin: 0.5rem 0;
+}
+
+.word-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.review-count {
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+.word-detail {
+  background-color: white;
+  padding: 2rem;
+  border-radius: 12px;
+  border: 2px solid #e5e7eb;
+  min-height: 600px;
+}
+
+.word-detail-content h3 {
+  margin-top: 0;
+  color: #1f2937;
+  font-size: 2rem;
+  border-bottom: 3px solid #6366f1;
+  padding-bottom: 0.5rem;
+}
+
+.detail-section {
+  margin: 1.5rem 0;
+}
+
+.detail-section h4 {
+  color: #4b5563;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.detail-section p {
+  color: #1f2937;
+  line-height: 1.6;
+  font-size: 1.1rem;
+}
+
+.detail-section ul {
+  list-style: none;
+  padding: 0;
+}
+
+.detail-section li {
+  padding: 0.75rem;
+  margin: 0.5rem 0;
+  background-color: #f9fafb;
+  border-radius: 6px;
+  border-left: 3px solid #6366f1;
+  color: #1f2937;
+}
+
+.detail-actions {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid #e5e7eb;
+}
+
+.review-btn {
+  padding: 0.75rem 1.5rem;
+  background-color: #10b981;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.review-btn:hover {
+  background-color: #059669;
+}
+
+.last-reviewed {
+  margin-top: 1rem;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.no-selection {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #9ca3af;
+  font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+  .wordbook-content {
+    grid-template-columns: 1fr;
+  }
+  
+  .wordbook-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .wordbook-stats {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
