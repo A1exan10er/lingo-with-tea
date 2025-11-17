@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Language } from '../models/Language';
 
-export type GeminiModelType = 'gemini-2.0-flash-exp' | 'gemini-1.5-pro';
+export type GeminiModelType = 'gemini-2.5-pro' | 'gemini-2.5-flash' | 'gemini-2.5-flash-lite' | 'gemini-2.0-flash' | 'gemini-2.0-flash-lite';
 
 /**
  * Service for interacting with Google's Gemini API
@@ -14,7 +14,7 @@ export class GeminiService {
   private readonly maxRetries = 3;
   private readonly retryDelay = 1000; // 1 second
 
-  private constructor(apiKey: string, modelType: GeminiModelType = 'gemini-1.5-pro') {
+  private constructor(apiKey: string, modelType: GeminiModelType = 'gemini-2.5-flash') {
     this.genAI = new GoogleGenerativeAI(apiKey);
     this.currentModelType = modelType;
     this.model = this.genAI.getGenerativeModel({ model: modelType });
