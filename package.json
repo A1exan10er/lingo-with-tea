@@ -2,7 +2,7 @@
   "name": "lingo-with-tea",
   "version": "0.1.0",
   "private": true,
-  "homepage": ".",
+  "homepage": "https://a1exan10er.github.io/lingo-with-tea",
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
     "@types/node": "^20.10.0",
