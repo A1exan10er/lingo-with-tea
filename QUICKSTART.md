@@ -7,16 +7,21 @@
 npm install
 ```
 
-### Step 2: Set Up Your API Key
+### Step 2: Set Up Your API Keys
 
-1. Get a free Gemini API key from: https://aistudio.google.com/app/apikey
-2. Copy `.env.example` to `.env`:
+1. **Gemini API Key**: Get a free key from https://aistudio.google.com/app/apikey
+2. **Firebase Project**: Create a project at https://console.firebase.google.com/
+   - Enable Authentication (Email/Password)
+   - Create a Firestore Database
+3. Copy `.env.example` to `.env`:
    ```powershell
    Copy-Item .env.example .env
    ```
-3. Open `.env` and paste your API key:
+4. Open `.env` and paste your API keys:
    ```
-   REACT_APP_GEMINI_API_KEY=your_actual_api_key_here
+   REACT_APP_GEMINI_API_KEY=your_gemini_key
+   REACT_APP_FIREBASE_API_KEY=your_firebase_key
+   # ... add other firebase config values
    ```
 
 ### Step 3: Run the Development Server
@@ -28,12 +33,15 @@ The app will open at http://localhost:3000
 
 ## 📱 Using the App
 
-1. **Set Your Languages**
+1. **Create an Account**
+   - Sign up with your email and password to save your progress to the cloud.
+
+2. **Set Your Languages**
    - Teaching Language: What language you want explanations in
    - Learning Language: The language you're studying (e.g., English, German)
    - AI Model: Choose from 5 Gemini models (2.5 Flash default)
 
-2. **AI Learning Module**
+3. **AI Learning Module**
    - **Learn Tab**: Generate personalized content
      - Select level (beginner, intermediate, advanced)
      - Enter a topic (e.g., "food", "travel", "business")
@@ -43,16 +51,17 @@ The app will open at http://localhost:3000
      - Complete translation exercises
      - Fill in the blanks
      - Get instant feedback with mistake analysis
+     - **History**: All attempts are automatically saved for review
 
-3. **Build Your Word Book**
+4. **Build Your Word Book**
    - Click "📖 My Word Book"
    - Type a new word in the input field
    - Press "Add Word" - AI will automatically:
      - Translate it
      - Provide explanations
      - Generate example sentences
-   - Click on words to see full details
-   - Mark words as reviewed to track progress
+   - **Filter**: Use the dropdown to filter words by language
+   - **Manage**: Use the three-dot menu to delete words
 
 ## 🌐 Deploy to GitHub Pages
 
@@ -69,12 +78,10 @@ The app will open at http://localhost:3000
    git push -u origin main
    ```
 
-3. **Add API Key Secret**:
+3. **Add Secrets**:
    - Go to your repository → Settings → Secrets and variables → Actions
-   - Click "New repository secret"
-   - Name: `REACT_APP_GEMINI_API_KEY`
-   - Value: Your Gemini API key
-   - Click "Add secret"
+   - Add `REACT_APP_GEMINI_API_KEY`
+   - Add all Firebase config variables (e.g., `REACT_APP_FIREBASE_API_KEY`, etc.)
 
 4. **Enable GitHub Pages**:
    - Go to Settings → Pages
@@ -135,11 +142,10 @@ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 Run: `npm install`
 
 ### API Errors
-- Check your `.env` file has the correct API key
-- Ensure the key is active on Google AI Studio
+- Check your `.env` file has the correct API keys
+- Ensure the keys are active
 - Check your internet connection
-- If you get "model is overloaded", wait a moment and try again (automatic retry is built-in)
-- Try switching to a different AI model in the settings
+- If you see "model is overloaded", wait a moment and try again (automatic retry is built-in)
 
 ### Build Errors
 - Delete `node_modules` and `package-lock.json`
@@ -148,10 +154,9 @@ Run: `npm install`
 
 ## 📝 Tips
 
-- The app saves your word book locally in the browser
-- Clear browser data will delete your word book
-- Export/import features coming soon!
-- Review words regularly for better retention
+- Your data is saved to the cloud (Firebase), so you can access it from any device by logging in.
+- Review words regularly for better retention.
+- Check your History tab to see what you need to improve.
 
 ---
 

@@ -18,9 +18,19 @@ A modern, AI-powered language learning platform built with React and TypeScript.
   - Gemini 2.0 Flash
   - Gemini 2.0 Flash Lite
 - **Smart Error Handling**: Automatic retry with exponential backoff and model fallback for reliability
-- **Personal Word Book**: Save and manage your own vocabulary with AI-generated content
+- **Personal Word Book**: 
+  - Save and manage your own vocabulary
+  - **Language Categorization**: Words are automatically tagged with their language
+  - **Filtering**: Filter your word book by language
+  - **Three-Dot Menu**: Easy management and deletion of words
+- **History Tracking**:
+  - **Practice History**: Automatically saves all your practice attempts
+  - **Success & Mistakes**: Visual distinction between correct answers and mistakes
+  - **Detailed Analysis**: Review AI feedback on your past mistakes
+- **User Accounts**: 
+  - Secure Email/Password authentication with Firebase
+  - Cloud sync for your progress and word book
 - **Object-Oriented Design**: Clean, maintainable TypeScript code with proper OOP principles
-- **Persistent Storage**: Your progress and word book are saved locally
 
 ## 🚀 Getting Started
 
@@ -32,6 +42,7 @@ Visit the live application at: **https://a1exan10er.github.io/lingo-with-tea/**
 
 - Node.js 18+ installed
 - A Google Gemini API key ([Get one here](https://aistudio.google.com/app/apikey))
+- A Firebase Project ([Console](https://console.firebase.google.com/))
 
 ### Local Development
 
@@ -51,9 +62,15 @@ npm install
 cp .env.example .env
 ```
 
-4. Add your Gemini API key to `.env`:
+4. Configure your environment variables in `.env`:
 ```
-REACT_APP_GEMINI_API_KEY=your_api_key_here
+REACT_APP_GEMINI_API_KEY=your_gemini_api_key
+REACT_APP_FIREBASE_API_KEY=your_firebase_api_key
+REACT_APP_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+REACT_APP_FIREBASE_PROJECT_ID=your_project_id
+REACT_APP_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+REACT_APP_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+REACT_APP_FIREBASE_APP_ID=your_app_id
 ```
 
 5. Start the development server:
@@ -71,26 +88,23 @@ lingo-with-tea/
 │   └── index.html
 ├── src/
 │   ├── components/
+│   │   ├── Auth/                 # Authentication components
+│   │   ├── HistoryModule/        # History tracking
 │   │   ├── LanguageSelector/
-│   │   │   ├── LanguageSelector.tsx
-│   │   │   └── LanguageSelector.css
 │   │   ├── LearningModule/
-│   │   │   ├── LearningModule.tsx
-│   │   │   └── LearningModule.css
 │   │   ├── VocabularyModule/
-│   │   │   ├── VocabularyModule.tsx
-│   │   │   └── VocabularyModule.css
 │   │   └── WordBookModule/
-│   │       ├── WordBookModule.tsx
-│   │       └── WordBookModule.css
 │   ├── models/
-│   │   ├── Language.ts        # Language entity
-│   │   ├── User.ts            # User entity
-│   │   ├── Word.ts            # Word entity
-│   │   ├── WordBook.ts        # WordBook manager
-│   │   └── Vocabulary.ts      # Vocabulary lesson manager
+│   │   ├── Language.ts
+│   │   ├── User.ts
+│   │   ├── Word.ts
+│   │   ├── WordBook.ts
+│   │   └── Vocabulary.ts
 │   ├── services/
-│   │   └── GeminiService.ts   # AI service integration
+│   │   ├── AuthService.ts        # Firebase Auth
+│   │   ├── GeminiService.ts      # AI Service
+│   │   ├── UserService.ts        # Firestore Data
+│   │   └── firebase.ts           # Firebase Config
 │   ├── App.tsx
 │   ├── App.css
 │   ├── index.tsx
@@ -108,82 +122,59 @@ lingo-with-tea/
 The application follows OOP principles with clear separation of concerns:
 
 - **Models**: `User`, `Language`, `Word`, `WordBook`, `VocabularyLesson`
-  - Encapsulation of data and behavior
-  - Clear interfaces and methods
-  - Serialization/deserialization for persistence
-
-- **Services**: `GeminiService`
-  - Singleton pattern for API management
-  - Abstracted AI interactions
-  - Error handling and retry logic
-
+- **Services**: 
+  - `GeminiService`: Singleton for AI interactions
+  - `AuthService`: Handles user authentication
+  - `UserService`: Manages user data in Firestore
 - **Components**: React functional components with TypeScript
-  - Props typing for type safety
-  - Separation of presentation and logic
 
-### Key Classes
+### Key Features
 
 #### `Language`
 Represents a language with code, name, and native name. Provides static instances for supported languages.
 
-#### `Word`
-Encapsulates word data including translation, explanation, examples, and review tracking.
-
 #### `WordBook`
-Manages a user's personal collection of words with search, filter, and review capabilities.
+Manages a user's personal collection of words with search, filter, and review capabilities. Now supports language-based filtering.
 
-#### `VocabularyLesson`
-Organizes vocabulary items by topic, difficulty, and category.
+#### `History`
+Tracks every practice attempt. Correct answers are marked as practice, while incorrect ones are stored as mistakes with detailed AI analysis for review.
 
 #### `GeminiService`
 Handles all AI interactions with advanced error handling:
-- Support for 5 Gemini models (2.5 Pro, 2.5 Flash, 2.5 Flash Lite, 2.0 Flash, 2.0 Flash Lite)
-- Automatic retry with exponential backoff (up to 5 attempts)
-- Smart model fallback when a model is overloaded
-- Translation, explanation, content generation, and mistake analysis
+- Support for 5 Gemini models
+- Automatic retry with exponential backoff
+- Smart model fallback
 
 ## 🎯 Usage
+
+### Authentication
+1. Sign up with your email and password
+2. Your data is securely stored in the cloud
 
 ### Language Settings
 1. Choose the teaching language (what language you want explanations in)
 2. Pick the language you want to learn (e.g., English, German)
-3. Select your preferred AI model (Gemini 2.5 Flash by default)
+3. Select your preferred AI model
 
 ### AI Learning Module
 - **Learn Tab**: Generate personalized content by level and topic
-  - Vocabulary: Get 8 relevant words with translations and examples
-  - Sentences: Learn 5 common sentences with grammar explanations
-  - Grammar: Understand key grammar concepts with examples
-- **Practice Tab**: Test your knowledge with interactive exercises
-  - Translation exercises with detailed feedback
-  - Fill-in-the-blank with multiple choice options
-  - Instant mistake analysis with grammar and vocabulary tips
+- **Practice Tab**: Test your knowledge with interactive exercises. Content persists when switching tabs.
 
 ### Word Book Module
 - Add new words - AI automatically generates translations and explanations
-- Search and filter your saved words
-- Mark words as reviewed to track progress
-- View detailed information including examples
+- Filter words by language
+- Use the three-dot menu to delete words
+
+### History Module
+- Review your learning journey
+- See all your practice attempts (correct and incorrect)
+- Delete history items if needed
 
 ## 🌐 Deployment
 
 ### GitHub Pages (Automated)
 
-This project uses GitHub Actions for automatic deployment:
-
-1. **Add your API key as a GitHub Secret**:
-   - Go to your repository → Settings → Secrets and variables → Actions
-   - Create a new secret: `REACT_APP_GEMINI_API_KEY`
-   - Paste your Gemini API key as the value
-
-2. **Enable GitHub Pages**:
-   - Go to Settings → Pages
-   - Set Source to "GitHub Actions"
-
-3. **Deploy**:
-   - Push to the `main` branch
-   - GitHub Actions automatically builds and deploys
-   - Visit: `https://yourusername.github.io/lingo-with-tea/`
+This project uses GitHub Actions for automatic deployment. Ensure you add all required secrets (Gemini API Key and Firebase Config) to your repository secrets.
 
 ### Manual Deployment
 
@@ -192,23 +183,15 @@ npm run build
 npm run deploy
 ```
 
-**Important**: Always add `REACT_APP_GEMINI_API_KEY` to your deployment platform's environment variables.
-
 ## 🔧 Configuration
 
 ### Environment Variables
 
-- `REACT_APP_GEMINI_API_KEY`: Your Google Gemini API key (required)
+See `.env.example` for the full list of required variables.
 
 ### Adding New Languages
 
-Edit `src/models/Language.ts`:
-
-```typescript
-static readonly FRENCH = new Language('fr', 'French', 'Français');
-```
-
-Then add to `getAllLanguages()` method.
+Edit `src/models/Language.ts` and add new static instances.
 
 ## 🤝 Contributing
 
@@ -222,7 +205,7 @@ This project is open source and available under the MIT License.
 
 - Powered by [Google Gemini AI](https://ai.google.dev/)
 - Built with [React](https://react.dev/) and [TypeScript](https://www.typescriptlang.org/)
-- Icons and emojis for visual enhancement
+- Authentication & Storage by [Firebase](https://firebase.google.com/)
 
 ## 📧 Contact
 

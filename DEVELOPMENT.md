@@ -1,15 +1,15 @@
 # Lingo with Tea - Development Notes
 
 ## Project Overview
-A language learning web application with AI-powered features using Google Gemini API.
+A language learning web application with AI-powered features using Google Gemini API and Firebase for backend services.
 
 ## Technology Stack
 - **Frontend**: React 18 with TypeScript
 - **Styling**: CSS3 (no framework needed)
 - **AI Service**: Google Gemini API
+- **Backend**: Firebase (Auth, Firestore)
 - **State Management**: React Hooks
-- **Storage**: Browser LocalStorage
-- **Deployment**: GitHub Pages / Vercel / Netlify
+- **Deployment**: GitHub Pages
 
 ## Architecture
 
@@ -22,7 +22,6 @@ The application follows OOP principles with these core classes:
 - `Word`: Individual word entity with metadata
 - `WordBook`: Collection manager for user's words
 - `VocabularyLesson`: Lesson container with difficulty levels
-- `VocabularyManager`: Manages all lessons
 
 #### Services Layer
 - `GeminiService`: Singleton service for AI API calls
@@ -30,32 +29,37 @@ The application follows OOP principles with these core classes:
   - Explanation generation
   - Example sentence creation
   - Vocabulary lesson generation
+- `AuthService`: Singleton for Firebase Authentication
+- `UserService`: Singleton for Firestore data operations
 
 #### Components Layer
 - `LanguageSelector`: Reusable language dropdown
 - `VocabularyModule`: Browse and learn from lessons
 - `WordBookModule`: Personal word management
+- `HistoryModule`: Track learning progress
 - `App`: Main application orchestrator
 
 ## Data Flow
 
-1. User selects languages → Stored in User object → Persisted to localStorage
-2. User views vocabulary → VocabularyManager provides lessons
-3. User adds word → WordBook creates Word → GeminiService enriches → Persisted to localStorage
-4. User reviews word → Word tracking updated → Persisted
+1. User logs in → `AuthService` authenticates with Firebase
+2. User profile loaded → `UserService` fetches data from Firestore
+3. User selects languages → Stored in User object → Persisted to Firestore
+4. User adds word → WordBook creates Word → GeminiService enriches → Persisted to Firestore
+5. User practices → Results saved to History → Persisted to Firestore
 
 ## Key Features
 
 ### Implemented
+✅ User Accounts (Firebase Auth)
+✅ Cloud Persistence (Firestore)
 ✅ Multi-language support (English, German, Chinese)
 ✅ Flexible teaching language selection
-✅ AI-powered word translations
-✅ AI-generated explanations
-✅ Example sentence generation
+✅ AI-powered word translations & explanations
 ✅ Vocabulary lessons with difficulty levels
-✅ Personal word book with search
+✅ Personal word book with language filtering
+✅ Practice history tracking
 ✅ Review tracking
-✅ Local persistence
+✅ Three-dot menu for item management
 
 ### Future Enhancements
 🔄 Spaced repetition algorithm
@@ -64,7 +68,6 @@ The application follows OOP principles with these core classes:
 🔄 Image associations
 🔄 Progress analytics
 🔄 Export/import word book
-🔄 Multi-user support with backend
 🔄 Mobile app version
 🔄 Offline mode
 
@@ -94,17 +97,17 @@ src/
 - Functions: camelCase (e.g., `getWordDetails`)
 
 ## Performance Considerations
-- Singleton pattern for GeminiService (avoid multiple API connections)
-- LocalStorage for persistence (no backend needed)
+- Singleton pattern for Services (avoid multiple API connections)
+- Cloud persistence with Firestore
 - Lazy loading for vocabulary content
 - Debouncing for search inputs
 - Memoization for expensive computations
 
 ## Security Notes
-- API key stored in environment variables
+- API keys stored in environment variables
 - Never commit `.env` to git
 - Use GitHub Secrets for deployment
-- Rate limiting on API calls (future)
+- Firebase Security Rules for data protection
 
 ## Browser Support
 - Chrome/Edge 90+
@@ -122,10 +125,9 @@ src/
 - Unit tests for models (Jest)
 - Integration tests for services
 - Component tests (React Testing Library)
-- E2E tests (Cypress) - future
 
 ## Deployment Checklist
-- [ ] Set API key in environment
+- [ ] Set API keys in environment
 - [ ] Update homepage in package.json
 - [ ] Build production bundle
 - [ ] Test build locally
