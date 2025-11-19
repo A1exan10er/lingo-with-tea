@@ -11,19 +11,17 @@ export class User {
   private createdAt: Date;
 
   constructor(
+    id: string,
     name: string,
     teachingLanguage: Language,
-    learningLanguages: Language[] = []
+    learningLanguages: Language[] = [],
+    createdAt: Date = new Date()
   ) {
-    this.id = this.generateId();
+    this.id = id;
     this.name = name;
     this.teachingLanguage = teachingLanguage;
     this.learningLanguages = learningLanguages;
-    this.createdAt = new Date();
-  }
-
-  private generateId(): string {
-    return `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    this.createdAt = createdAt;
   }
 
   getId(): string {
@@ -82,9 +80,12 @@ export class User {
       .map((code: string) => Language.findByCode(code))
       .filter((lang: Language | undefined) => lang !== undefined);
 
-    const user = new User(json.name, teachingLanguage, learningLanguages);
-    user.id = json.id;
-    user.createdAt = new Date(json.createdAt);
-    return user;
+    return new User(
+      json.id,
+      json.name,
+      teachingLanguage,
+      learningLanguages,
+      new Date(json.createdAt)
+    );
   }
 }

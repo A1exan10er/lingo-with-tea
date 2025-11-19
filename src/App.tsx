@@ -1,55 +1,74 @@
 import React, { useState, useEffect } from 'react';
 import { User, Language } from './models';
-import { LanguageSelector, LearningModule, WordBookModule } from './components';
+import { LanguageSelector, LearningModule, WordBookModule, HistoryModule } from './components';
+import { Login } from './components/Auth/Login';
 import { GeminiService, GeminiModelType } from './services/GeminiService';
+import { AuthService, UserService } from './services';
 import './App.css';
 import './components/LanguageSelector/LanguageSelector.css';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
-  const [activeTab, setActiveTab] = useState<'learning' | 'wordbook'>('learning');
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'learning' | 'wordbook' | 'history'>('learning');
   const [currentLearningLanguage, setCurrentLearningLanguage] = useState<Language>(Language.ENGLISH);
   const [currentModel, setCurrentModel] = useState<GeminiModelType>('gemini-2.5-flash');
+  const [error, setError] = useState<string | null>(null);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    // Load user from localStorage or create a default user
-    const createDefault = () => {
-      const defaultUser = new User(
-        'Language Learner',
-        Language.CHINESE,
-        [Language.ENGLISH, Language.GERMAN]
-      );
-      setUser(defaultUser);
-      localStorage.setItem('user', JSON.stringify(defaultUser.toJSON()));
-    };
+    const authService = AuthService.getInstance();
+    const userService = UserService.getInstance();
 
-    const stored = localStorage.getItem('user');
-    if (stored) {
-      try {
-        const userData = JSON.parse(stored);
-        setUser(User.fromJSON(userData));
-      } catch (error) {
-        console.error('Failed to load user:', error);
-        createDefault();
+    const unsubscribe = authService.onAuthStateChanged(async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          let appUser = await userService.getUser(firebaseUser.uid);
+
+          if (!appUser) {
+            // New user, create profile
+            appUser = new User(
+              firebaseUser.uid,
+              firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+              Language.CHINESE, // Default teaching language
+              [Language.ENGLISH] // Default learning language
+            );
+            await userService.createUser(appUser);
+          }
+
+          setUser(appUser);
+          // Set initial learning language if available
+          if (appUser.getLearningLanguages().length > 0) {
+            setCurrentLearningLanguage(appUser.getLearningLanguages()[0]);
+          }
+          setError(null);
+        } catch (error: any) {
+          console.error('Error fetching user profile:', error);
+          setError(`Failed to load user profile: ${error.message}`);
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+        setError(null);
       }
-    } else {
-      createDefault();
-    }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-
-
-  const saveUser = (updatedUser: User) => {
-    localStorage.setItem('user', JSON.stringify(updatedUser.toJSON()));
-    setUser(updatedUser);
-  };
-
-  const handleTeachingLanguageChange = (language: Language) => {
+  const handleTeachingLanguageChange = async (language: Language) => {
     if (user) {
       user.setTeachingLanguage(language);
+      // Create a new instance to trigger re-render and ensure clean state
       const updatedUser = User.fromJSON(user.toJSON());
-      saveUser(updatedUser);
+      setUser(updatedUser);
+
+      try {
+        const userService = UserService.getInstance();
+        await userService.updateUser(updatedUser);
+      } catch (error) {
+        console.error('Failed to save user settings:', error);
+      }
     }
   };
 
@@ -64,15 +83,45 @@ function App() {
     }
   };
 
-  if (!user) {
+  const handleLogout = async () => {
+    try {
+      const authService = AuthService.getInstance();
+      await authService.logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
+  if (loading) {
     return <div className="loading">Loading...</div>;
+  }
+
+  if (!user) {
+    return (
+      <div>
+        {error && (
+          <div style={{ padding: '20px', backgroundColor: '#ffebee', color: '#c62828', textAlign: 'center' }}>
+            <strong>Error:</strong> {error}
+          </div>
+        )}
+        <Login onLoginSuccess={() => { }} />
+      </div>
+    );
   }
 
   return (
     <div className="App">
       <header className="app-header">
-        <h1>☕ Lingo with Tea</h1>
-        <p className="tagline">Learn languages with AI-powered assistance</p>
+        <div className="header-content">
+          <div>
+            <h1>☕ Lingo with Tea</h1>
+            <p className="tagline">Learn languages with AI-powered assistance</p>
+          </div>
+          <div className="user-controls">
+            <span className="user-name">Hello, {user.getName()}</span>
+            <button onClick={handleLogout} className="logout-btn">Logout</button>
+          </div>
+        </div>
       </header>
 
       <div className="language-settings">
@@ -93,9 +142,9 @@ function App() {
           <div className="settings-row">
             <div className="model-selector">
               <label htmlFor="model-select">🤖 AI Model:</label>
-              <select 
+              <select
                 id="model-select"
-                value={currentModel} 
+                value={currentModel}
                 onChange={handleModelChange}
                 className="model-select"
               >
@@ -123,6 +172,12 @@ function App() {
         >
           📖 My Word Book
         </button>
+        <button
+          className={`tab ${activeTab === 'history' ? 'active' : ''}`}
+          onClick={() => setActiveTab('history')}
+        >
+          📜 History
+        </button>
       </div>
 
       <main className="app-content">
@@ -130,6 +185,7 @@ function App() {
           <LearningModule
             learningLanguage={currentLearningLanguage}
             teachingLanguage={user.getTeachingLanguage()}
+            userId={user.getId()}
           />
         )}
         {activeTab === 'wordbook' && (
@@ -137,6 +193,11 @@ function App() {
             userId={user.getId()}
             teachingLanguage={user.getTeachingLanguage()}
             currentLanguage={currentLearningLanguage}
+          />
+        )}
+        {activeTab === 'history' && (
+          <HistoryModule
+            userId={user.getId()}
           />
         )}
       </main>

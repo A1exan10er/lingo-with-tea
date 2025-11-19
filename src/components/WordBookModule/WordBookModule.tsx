@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Word, WordBook, Language } from '../../models';
-import { GeminiService } from '../../services';
+import { Language } from '../../models';
+import { UserService } from '../../services';
 import './WordBookModule.css';
 
 interface WordBookModuleProps {
@@ -14,223 +14,152 @@ export const WordBookModule: React.FC<WordBookModuleProps> = ({
   teachingLanguage,
   currentLanguage,
 }) => {
-  const [wordBook] = useState<WordBook>(() => WordBook.load(userId));
-  const [words, setWords] = useState<Word[]>([]);
-  const [selectedWord, setSelectedWord] = useState<Word | null>(null);
-  const [newWordText, setNewWordText] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [filterLanguage, setFilterLanguage] = useState<string>('all');
+  const [words, setWords] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [filter, setFilter] = useState('');
+  const [languageFilter, setLanguageFilter] = useState<string>('all');
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   useEffect(() => {
-    const allWords = filterLanguage === 'all'
-      ? wordBook.getAllWords()
-      : wordBook.getWordsByLanguage(filterLanguage);
-    setWords(allWords);
-  }, [wordBook, filterLanguage]);
+    const loadWords = async () => {
+      setIsLoading(true);
+      try {
+        const userService = UserService.getInstance();
+        const userWords = await userService.getWordBook(userId);
+        setWords(userWords);
+      } catch (error) {
+        console.error('Failed to load words:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const handleAddWord = async () => {
-    if (!newWordText.trim()) return;
+    loadWords();
+  }, [userId]);
 
-    setIsLoading(true);
-    try {
-      const gemini = GeminiService.getInstance();
-      const details = await gemini.getWordDetails(
-        newWordText,
-        currentLanguage,
-        teachingLanguage,
-        teachingLanguage
-      );
-
-      const word = new Word(
-        newWordText,
-        currentLanguage.code,
-        details.translation,
-        details.explanation,
-        details.examples
-      );
-
-      wordBook.addWord(word);
-      const updatedWords = filterLanguage === 'all'
-        ? wordBook.getAllWords()
-        : wordBook.getWordsByLanguage(filterLanguage);
-      setWords(updatedWords);
-      setNewWordText('');
-      setSelectedWord(word);
-    } catch (error) {
-      console.error('Failed to add word:', error);
-      alert('Failed to add word. Please check your API key and try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleDeleteWord = (wordId: string) => {
+  const handleDelete = async (wordId: string) => {
     if (window.confirm('Are you sure you want to delete this word?')) {
-      wordBook.removeWord(wordId);
-      const updatedWords = filterLanguage === 'all'
-        ? wordBook.getAllWords()
-        : wordBook.getWordsByLanguage(filterLanguage);
-      setWords(updatedWords);
-      if (selectedWord?.getId() === wordId) {
-        setSelectedWord(null);
+      try {
+        const userService = UserService.getInstance();
+        await userService.deleteWordFromWordBook(userId, wordId);
+        setWords(words.filter(w => w.id !== wordId));
+        setOpenMenuId(null);
+      } catch (error) {
+        console.error('Failed to delete word:', error);
+        alert('Failed to delete word');
       }
     }
   };
 
-  const handleMarkAsReviewed = (word: Word) => {
-    word.markAsReviewed();
-    wordBook.addWord(word); // Update in storage
-    const updatedWords = filterLanguage === 'all'
-      ? wordBook.getAllWords()
-      : wordBook.getWordsByLanguage(filterLanguage);
-    setWords(updatedWords);
+  const getLanguageName = (languageCode: string | undefined) => {
+    if (!languageCode) return 'Unknown';
+    const lang = Language.findByCode(languageCode);
+    return lang ? lang.name : 'Unknown';
   };
 
-  const handleSearch = () => {
-    if (searchQuery.trim()) {
-      const results = wordBook.searchWords(searchQuery);
-      setWords(results);
-    } else {
-      const allWords = filterLanguage === 'all'
-        ? wordBook.getAllWords()
-        : wordBook.getWordsByLanguage(filterLanguage);
-      setWords(allWords);
-    }
+  const getLanguageFlag = (languageCode: string | undefined) => {
+    if (!languageCode) return '🏳️';
+    const flags: { [key: string]: string } = {
+      'en': '🇬🇧',
+      'zh': '🇨🇳',
+      'es': '🇪🇸',
+      'fr': '🇫🇷',
+      'de': '🇩🇪',
+      'ja': '🇯🇵',
+      'ko': '🇰🇷',
+      'it': '🇮🇹',
+      'pt': '🇵🇹',
+      'ru': '🇷🇺'
+    };
+    return flags[languageCode] || '🌐';
   };
 
-  const filteredWords = searchQuery
-    ? words
-    : words;
+  // Get unique languages from words
+  const uniqueLanguages = Array.from(new Set(words.map(w => w.language).filter(Boolean)));
+
+  const filteredWords = words.filter(word => {
+    const matchesSearch = word.word.toLowerCase().includes(filter.toLowerCase()) ||
+      word.translation.toLowerCase().includes(filter.toLowerCase());
+    const matchesLanguage = languageFilter === 'all' || word.language === languageFilter;
+    return matchesSearch && matchesLanguage;
+  });
 
   return (
     <div className="wordbook-module">
       <div className="wordbook-header">
         <h2>📖 My Word Book</h2>
-        <div className="wordbook-stats">
-          <span>Total Words: {wordBook.getTotalWordCount()}</span>
-          <span>Need Review: {wordBook.getWordsNeedingReview().length}</span>
+        <div className="wordbook-controls">
+          <div className="search-bar">
+            <input
+              type="text"
+              placeholder="Search words..."
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+            />
+          </div>
+          <div className="language-filter">
+            <label>Filter by language:</label>
+            <select value={languageFilter} onChange={(e) => setLanguageFilter(e.target.value)}>
+              <option value="all">All Languages</option>
+              {uniqueLanguages.map(langCode => (
+                <option key={langCode} value={langCode}>
+                  {getLanguageFlag(langCode)} {getLanguageName(langCode)}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
-      <div className="wordbook-controls">
-        <div className="add-word-section">
-          <input
-            type="text"
-            placeholder="Enter a new word..."
-            value={newWordText}
-            onChange={(e) => setNewWordText(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleAddWord()}
-            disabled={isLoading}
-          />
-          <button onClick={handleAddWord} disabled={isLoading || !newWordText.trim()}>
-            {isLoading ? 'Adding...' : 'Add Word'}
-          </button>
+      {isLoading ? (
+        <div className="loading-state">Loading your words...</div>
+      ) : filteredWords.length === 0 ? (
+        <div className="empty-state">
+          <p>No words found. Start learning to add words to your book!</p>
         </div>
-
-        <div className="search-filter-section">
-          <input
-            type="text"
-            placeholder="Search words..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-          />
-          <select
-            value={filterLanguage}
-            onChange={(e) => setFilterLanguage(e.target.value)}
-          >
-            <option value="all">All Languages</option>
-            {Language.getAllLanguages().map((lang) => (
-              <option key={lang.code} value={lang.code}>
-                {lang.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      <div className="wordbook-content">
-        <div className="words-list">
-          {filteredWords.length === 0 ? (
-            <div className="no-words">
-              <p>No words yet. Add your first word to get started!</p>
-            </div>
-          ) : (
-            filteredWords.map((word) => (
-              <div
-                key={word.getId()}
-                className={`word-card ${selectedWord?.getId() === word.getId() ? 'active' : ''}`}
-                onClick={() => setSelectedWord(word)}
-              >
-                <div className="word-card-header">
-                  <h4>{word.getText()}</h4>
+      ) : (
+        <div className="words-grid">
+          {filteredWords.map((word) => (
+            <div
+              key={word.id}
+              className="word-card"
+              onMouseLeave={() => setOpenMenuId(null)}
+            >
+              <div className="word-card-header">
+                <span className="language-badge">
+                  {getLanguageFlag(word.language)} {getLanguageName(word.language)}
+                </span>
+                <div className="menu-container">
                   <button
-                    className="delete-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteWord(word.getId());
-                    }}
+                    className="menu-btn"
+                    onClick={() => setOpenMenuId(openMenuId === word.id ? null : word.id)}
+                    title="Options"
                   >
-                    ×
+                    ⋮
                   </button>
+                  {openMenuId === word.id && (
+                    <div className="menu-dropdown">
+                      <button onClick={() => handleDelete(word.id)}>
+                        🗑️ Delete
+                      </button>
+                    </div>
+                  )}
                 </div>
-                <p className="word-translation">{word.getTranslation()}</p>
-                <div className="word-meta">
-                  <span className="review-count">
-                    Reviewed: {word.getReviewCount()} times
-                  </span>
-                </div>
               </div>
-            ))
-          )}
-        </div>
-
-        <div className="word-detail">
-          {selectedWord ? (
-            <div className="word-detail-content">
-              <h3>{selectedWord.getText()}</h3>
-              <div className="detail-section">
-                <h4>Translation</h4>
-                <p>{selectedWord.getTranslation()}</p>
-              </div>
-              <div className="detail-section">
-                <h4>Explanation</h4>
-                <p>{selectedWord.getExplanation()}</p>
-              </div>
-              {selectedWord.getExamples().length > 0 && (
-                <div className="detail-section">
-                  <h4>Examples</h4>
-                  <ul>
-                    {selectedWord.getExamples().map((example, index) => (
-                      <li key={index}>{example}</li>
-                    ))}
-                  </ul>
+              <div className="word-main">{word.word}</div>
+              <div className="word-translation">{word.translation}</div>
+              {word.example && (
+                <div className="word-example">
+                  <strong>Example:</strong> {word.example}
                 </div>
               )}
-              <div className="detail-actions">
-                <button
-                  className="review-btn"
-                  onClick={() => handleMarkAsReviewed(selectedWord)}
-                >
-                  Mark as Reviewed
-                </button>
-                <p className="last-reviewed">
-                  Last reviewed: {
-                    selectedWord.getLastReviewed()
-                      ? selectedWord.getLastReviewed()!.toLocaleDateString()
-                      : 'Never'
-                  }
-                </p>
+              <div className="word-meta">
+                Added: {new Date(word.addedAt).toLocaleDateString()}
               </div>
             </div>
-          ) : (
-            <div className="no-selection">
-              <p>Select a word to view details</p>
-            </div>
-          )}
+          ))}
         </div>
-      </div>
+      )}
     </div>
   );
 };

@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { Language } from '../../models';
-import { GeminiService } from '../../services';
+import { GeminiService, UserService } from '../../services';
 import './LearningModule.css';
 
 interface LearningModuleProps {
   learningLanguage: Language;
   teachingLanguage: Language;
+  userId: string;
 }
 
 export const LearningModule: React.FC<LearningModuleProps> = ({
   learningLanguage,
   teachingLanguage,
+  userId,
 }) => {
   const [level, setLevel] = useState<'beginner' | 'intermediate' | 'advanced'>('beginner');
   const [topic, setTopic] = useState('');
@@ -18,6 +20,7 @@ export const LearningModule: React.FC<LearningModuleProps> = ({
   const [content, setContent] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'learn' | 'practice'>('learn');
+  const [addingWord, setAddingWord] = useState<string | null>(null);
 
   const handleGenerateContent = async () => {
     if (!topic.trim()) {
@@ -45,14 +48,43 @@ export const LearningModule: React.FC<LearningModuleProps> = ({
     }
   };
 
+  const handleAddToWordBook = async (wordItem: any) => {
+    setAddingWord(wordItem.word);
+    try {
+      const userService = UserService.getInstance();
+      await userService.addWordToBook(userId, {
+        word: wordItem.word,
+        translation: wordItem.translation,
+        example: wordItem.example,
+        addedAt: new Date().toISOString()
+      }, learningLanguage);
+      alert(`Added "${wordItem.word}" to your Word Book!`);
+    } catch (error) {
+      console.error('Failed to add word:', error);
+      alert('Failed to add word to Word Book');
+    } finally {
+      setAddingWord(null);
+    }
+  };
+
   const renderVocabularyContent = () => {
     if (!Array.isArray(content)) return null;
-    
+
     return (
       <div className="vocabulary-content">
         {content.map((item: any, index: number) => (
           <div key={index} className="vocabulary-card">
-            <div className="word-main">{item.word}</div>
+            <div className="word-header">
+              <div className="word-main">{item.word}</div>
+              <button
+                className="add-word-btn"
+                onClick={() => handleAddToWordBook(item)}
+                disabled={addingWord === item.word}
+                title="Add to Word Book"
+              >
+                {addingWord === item.word ? '...' : '+'}
+              </button>
+            </div>
             <div className="word-translation">{item.translation}</div>
             {item.example && (
               <div className="word-example">
@@ -67,7 +99,7 @@ export const LearningModule: React.FC<LearningModuleProps> = ({
 
   const renderSentenceContent = () => {
     if (!Array.isArray(content)) return null;
-    
+
     return (
       <div className="sentence-content">
         {content.map((item: any, index: number) => (
@@ -94,7 +126,7 @@ export const LearningModule: React.FC<LearningModuleProps> = ({
 
   const renderGrammarContent = () => {
     if (typeof content !== 'object' || Array.isArray(content)) return null;
-    
+
     return (
       <div className="grammar-content">
         <h3>{content.title}</h3>
@@ -148,78 +180,77 @@ export const LearningModule: React.FC<LearningModuleProps> = ({
         </button>
       </div>
 
-      {activeTab === 'learn' && (
-        <>
-          <div className="learning-controls">
-            <div className="control-group">
-              <label>Learning Level:</label>
-              <select value={level} onChange={(e) => setLevel(e.target.value as any)}>
-                <option value="beginner">Beginner</option>
-                <option value="intermediate">Intermediate</option>
-                <option value="advanced">Advanced</option>
-              </select>
-            </div>
-
-            <div className="control-group">
-              <label>Content Type:</label>
-              <select value={contentType} onChange={(e) => setContentType(e.target.value as any)}>
-                <option value="vocabulary">Vocabulary</option>
-                <option value="sentences">Sentences</option>
-                <option value="grammar">Grammar</option>
-              </select>
-            </div>
-
-            <div className="control-group">
-              <label>Topic:</label>
-              <input
-                type="text"
-                placeholder="e.g., travel, food, business..."
-                value={topic}
-                onChange={(e) => setTopic(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleGenerateContent()}
-              />
-            </div>
-
-            <button 
-              className="generate-btn"
-              onClick={handleGenerateContent}
-              disabled={isLoading || !topic.trim()}
-            >
-              {isLoading ? 'Generating...' : 'Generate Content'}
-            </button>
+      <div style={{ display: activeTab === 'learn' ? 'block' : 'none' }}>
+        <div className="learning-controls">
+          <div className="control-group">
+            <label>Learning Level:</label>
+            <select value={level} onChange={(e) => setLevel(e.target.value as any)}>
+              <option value="beginner">Beginner</option>
+              <option value="intermediate">Intermediate</option>
+              <option value="advanced">Advanced</option>
+            </select>
           </div>
 
-          <div className="learning-content">
-            {isLoading && (
-              <div className="loading-state">
-                <p>🤖 AI is generating personalized content for you...</p>
-              </div>
-            )}
-            
-            {!isLoading && content && (
-              <>
-                {contentType === 'vocabulary' && renderVocabularyContent()}
-                {contentType === 'sentences' && renderSentenceContent()}
-                {contentType === 'grammar' && renderGrammarContent()}
-              </>
-            )}
-
-            {!isLoading && !content && (
-              <div className="empty-state">
-                <p>👆 Select your level, content type, and topic to get started!</p>
-              </div>
-            )}
+          <div className="control-group">
+            <label>Content Type:</label>
+            <select value={contentType} onChange={(e) => setContentType(e.target.value as any)}>
+              <option value="vocabulary">Vocabulary</option>
+              <option value="sentences">Sentences</option>
+              <option value="grammar">Grammar</option>
+            </select>
           </div>
-        </>
-      )}
 
-      {activeTab === 'practice' && (
+          <div className="control-group">
+            <label>Topic:</label>
+            <input
+              type="text"
+              placeholder="e.g., travel, food, business..."
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleGenerateContent()}
+            />
+          </div>
+
+          <button
+            className="generate-btn"
+            onClick={handleGenerateContent}
+            disabled={isLoading || !topic.trim()}
+          >
+            {isLoading ? 'Generating...' : 'Generate Content'}
+          </button>
+        </div>
+
+        <div className="learning-content">
+          {isLoading && (
+            <div className="loading-state">
+              <p>🤖 AI is generating personalized content for you...</p>
+            </div>
+          )}
+
+          {!isLoading && content && (
+            <>
+              {contentType === 'vocabulary' && renderVocabularyContent()}
+              {contentType === 'sentences' && renderSentenceContent()}
+              {contentType === 'grammar' && renderGrammarContent()}
+            </>
+          )}
+
+          {!isLoading && !content && (
+            <div className="empty-state">
+              <p>👆 Select your level, content type, and topic to get started!</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div style={{ display: activeTab === 'practice' ? 'block' : 'none' }}>
         <PracticeSection
           learningLanguage={learningLanguage}
           teachingLanguage={teachingLanguage}
           level={level}
+          userId={userId}
         />
-      )}
+      </div>
     </div>
   );
 };
@@ -228,7 +259,8 @@ const PracticeSection: React.FC<{
   learningLanguage: Language;
   teachingLanguage: Language;
   level: 'beginner' | 'intermediate' | 'advanced';
-}> = ({ learningLanguage, teachingLanguage, level }) => {
+  userId: string;
+}> = ({ learningLanguage, teachingLanguage, level, userId }) => {
   const [topic, setTopic] = useState('');
   const [exerciseType, setExerciseType] = useState<'translation' | 'fillInBlank' | 'multipleChoice'>('translation');
   const [exercises, setExercises] = useState<any[]>([]);
@@ -271,13 +303,28 @@ const PracticeSection: React.FC<{
 
     const currentExercise = exercises[currentExerciseIndex];
     const correctAnswer = currentExercise.answer;
+    const isCorrect = userAnswer.trim().toLowerCase() === correctAnswer.trim().toLowerCase();
 
-    if (userAnswer.trim().toLowerCase() === correctAnswer.trim().toLowerCase()) {
+    if (isCorrect) {
       setFeedback({
         isCorrect: true,
         message: '✅ Correct! Well done!',
       });
       setShowFeedback(true);
+
+      // Save correct answer to history
+      try {
+        const userService = UserService.getInstance();
+        await userService.addHistory(userId, {
+          type: 'practice',
+          question: currentExercise.question || currentExercise.sentence,
+          userAnswer: userAnswer.trim(),
+          correctAnswer,
+          isCorrect: true,
+        });
+      } catch (error) {
+        console.error('Failed to save practice to history:', error);
+      }
     } else {
       setIsLoading(true);
       try {
@@ -295,6 +342,21 @@ const PracticeSection: React.FC<{
           analysis,
         });
         setShowFeedback(true);
+
+        // Save incorrect answer with analysis to history
+        try {
+          const userService = UserService.getInstance();
+          await userService.addHistory(userId, {
+            type: 'mistake',
+            question: currentExercise.question || currentExercise.sentence,
+            userAnswer: userAnswer.trim(),
+            correctAnswer,
+            isCorrect: false,
+            analysis,
+          });
+        } catch (error) {
+          console.error('Failed to save mistake to history:', error);
+        }
       } catch (error) {
         setFeedback({
           isCorrect: false,
@@ -344,7 +406,7 @@ const PracticeSection: React.FC<{
               />
             </div>
 
-            <button 
+            <button
               className="generate-btn"
               onClick={handleGenerateExercises}
               disabled={isLoading || !topic.trim()}
@@ -394,7 +456,7 @@ const PracticeSection: React.FC<{
           )}
 
           {!showFeedback && (
-            <button 
+            <button
               className="check-btn"
               onClick={handleCheckAnswer}
               disabled={!userAnswer.trim() || isLoading}
@@ -406,7 +468,7 @@ const PracticeSection: React.FC<{
           {showFeedback && feedback && (
             <div className={`feedback ${feedback.isCorrect ? 'correct' : 'incorrect'}`}>
               <h4>{feedback.isCorrect ? '✅ Correct!' : '❌ Incorrect'}</h4>
-              
+
               {!feedback.isCorrect && feedback.correctAnswer && (
                 <div className="correct-answer">
                   <strong>Correct answer:</strong> {feedback.correctAnswer}
@@ -457,7 +519,7 @@ const PracticeSection: React.FC<{
                 </div>
               )}
 
-              <button 
+              <button
                 className="next-btn"
                 onClick={handleNextExercise}
                 disabled={currentExerciseIndex >= exercises.length - 1}
